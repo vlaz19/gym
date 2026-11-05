@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <!-- Adapta la página al ancho del móvil y usa toda la pantalla (incluida la zona de la "isla") -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0e0f11">
+
+  <!-- iPhone: al añadirla a la pantalla de inicio, se abre a pantalla completa como una app -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gym">
+  <link rel="apple-touch-icon" href="iconos/icono-180.png">
+  <link rel="manifest" href="manifest.webmanifest">
+
+  <title>Gym</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Cada pantalla se dibuja dentro de su <section> desde JavaScript -->
+  <main>
+    <section id="vista-rutina" class="vista"></section>
+    <section id="vista-entrenar" class="vista" hidden></section>
+    <section id="vista-progreso" class="vista" hidden></section>
+    <section id="vista-personal" class="vista" hidden></section>
+  </main>
+
+  <!-- Barra de pestañas inferior -->
+  <nav class="barra">
+    <button data-vista="rutina">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>
+      <span>Rutina</span>
+    </button>
+    <button data-vista="entrenar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3 9.5v5M21 9.5v5M6.5 12h11"/></svg>
+      <span>Entrenar</span>
+    </button>
+    <button data-vista="progreso">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-7"/></svg>
+      <span>Progreso</span>
+    </button>
+    <button data-vista="personal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+      <span>Personal</span>
+    </button>
+  </nav>
+
+  <!-- Ventana emergente reutilizable (para editar ejercicios, ver fotos...) -->
+  <dialog id="hoja"></dialog>
+
+  <!-- Mensajes cortos que aparecen abajo ("Entreno guardado", etc.) -->
+  <div id="aviso" role="status"></div>
+
+  <!-- El orden importa: primero la base de datos y las utilidades, después cada pantalla -->
+  <script src="js/db.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/rutina.js"></script>
+  <script src="js/entrenar.js"></script>
+  <script src="js/progreso.js"></script>
+  <script src="js/personal.js"></script>
+</body>
+</html>
