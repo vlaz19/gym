@@ -15,7 +15,34 @@ async function pintarPersonal(vista) {
     seccionPesoCorporal(),
     seccionFotos(),
     seccionCopia(),
+    diagnosticoPantalla(), // TEMPORAL: quitar cuando se arregle el hueco inferior
   );
+}
+
+// TEMPORAL: medidas de la pantalla para investigar el hueco bajo la barra de pestañas
+function diagnosticoPantalla() {
+  const sonda = h('div', {
+    style: 'position: fixed; top: 0; left: 0; visibility: hidden; ' +
+           'padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom)',
+  });
+  document.body.append(sonda);
+  const estilo = getComputedStyle(sonda);
+  const zonaSegura = `${estilo.paddingTop} / ${estilo.paddingBottom}`;
+  sonda.remove();
+
+  const barra = document.querySelector('.barra').getBoundingClientRect();
+  const datos = [
+    `pantalla: ${screen.width}×${screen.height}`,
+    `innerHeight: ${window.innerHeight}`,
+    `clientHeight: ${document.documentElement.clientHeight}`,
+    `visualViewport: ${Math.round(window.visualViewport?.height ?? 0)}`,
+    `zona segura arriba/abajo: ${zonaSegura}`,
+    `barra: top ${Math.round(barra.top)}, bottom ${Math.round(barra.bottom)}`,
+    `instalada: ${navigator.standalone === true ? 'sí' : 'no'}`,
+  ];
+  return h('div', {},
+    h('h2', {}, 'Diagnóstico (temporal)'),
+    h('pre', { class: 'nota', style: 'white-space: pre-wrap; font-size: 0.8rem' }, datos.join('\n')));
 }
 
 // ---------- Peso corporal ----------
