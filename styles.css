@@ -119,6 +119,20 @@ h2 {
   border-radius: 999px;
 }
 
+/* Aviso de copia de seguridad pendiente */
+.recordatorio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: var(--superficie);
+  border: 1px solid var(--acento);
+  border-radius: var(--radio);
+}
+.recordatorio .boton { width: auto; flex-shrink: 0; }
+
 .vacio {
   margin: 0;
   padding: 28px 16px;

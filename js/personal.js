@@ -152,7 +152,12 @@ function seccionCopia() {
       h('button', { class: 'boton secundario', onclick: exportarCopia }, 'Exportar'),
       h('button', { class: 'boton secundario', onclick: () => selectorCopia.click() }, 'Restaurar')),
     selectorCopia,
-    h('p', { class: 'nota' }, 'Tus datos se guardan solo en este iPhone. Exporta una copia de vez en cuando y guárdala en Archivos o iCloud.'),
+    h('p', { class: 'nota' },
+      'Última copia: ',
+      h('b', {}, estado.ultimaCopia
+        ? new Date(estado.ultimaCopia).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'ninguna')),
+    h('p', { class: 'nota' }, 'Tus datos se guardan solo en este iPhone. Guarda la copia en iCloud Drive (Compartir → Guardar en Archivos). Te avisaré si pasan 14 días sin hacer una.'),
   );
 }
 
@@ -170,14 +175,20 @@ async function exportarCopia() {
     // En iPhone se abre el menú "Compartir" (Guardar en Archivos, AirDrop...)
     if (navigator.canShare?.({ files: [archivo] })) {
       await navigator.share({ files: [archivo], title: 'Copia de seguridad Gym' });
-      return;
+    } else {
+      // Si no se puede compartir, se descarga
+      const enlace = h('a', { href: URL.createObjectURL(archivo), download: archivo.name });
+      document.body.append(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
     }
-    // Si no se puede compartir, se descarga
-    const enlace = h('a', { href: URL.createObjectURL(archivo), download: archivo.name });
-    document.body.append(enlace);
-    enlace.click();
-    enlace.remove();
-    setTimeout(() => URL.revokeObjectURL(enlace.href), 10000);
+
+    // Solo llega aquí si la copia se guardó (si cierras el menú sin elegir, salta al catch)
+    estado.ultimaCopia = Date.now();
+    await guardar('ultimaCopia');
+    avisar('Copia de seguridad hecha ✓');
+    repintar();
   } catch (error) {
     if (error.name !== 'AbortError') { // AbortError = cerraste el menú sin elegir nada
       console.error(error);
@@ -201,6 +212,8 @@ async function importarCopia(archivo) {
   for (const clave of Object.keys(estado)) {
     estado[clave] = copia.datos[clave] ?? inicial[clave];
   }
+  // La copia que acabas de restaurar cuenta como tu última copia
+  estado.ultimaCopia = Date.parse(copia.exportada) || Date.now();
   await guardar(...Object.keys(estado));
   await DB.borrarFotos();
   for (const foto of copia.fotos || []) await DB.guardarFoto(foto);

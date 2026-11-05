@@ -26,6 +26,7 @@ function pintarEleccionDia(vista) {
   vista.replaceChildren(
     h('h1', {}, 'Entrenar'),
     h('p', { class: 'subtitulo' }, '¿Qué día toca hoy?'),
+    avisoCopia(),
     h('div', { class: 'lista' }, estado.dias.map((ids, i) => {
       const nombres = ids.map((id) => buscarEjercicio(id)?.nombre).filter(Boolean);
       const ultima = sesionesOrdenadas().filter((s) => s.dia === i).at(-1);

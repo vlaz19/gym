@@ -12,6 +12,7 @@ function estadoInicial() {
     sesiones: [],     // entrenos terminados: { id, dia, fecha, creada, ejercicios: [...] }
     pesoCorporal: [], // { id, fecha, kg }
     borrador: null,   // entreno en curso (se guarda mientras entrenas)
+    ultimaCopia: null, // momento (en ms) de la última copia de seguridad
   };
 }
 
@@ -97,6 +98,29 @@ function ultimaVezDe(ejercicioId) {
     .reverse()
     .map((s) => s.ejercicios.find((e) => e.ejercicioId === ejercicioId))
     .find(Boolean);
+}
+
+// ===== Recordatorio de copia de seguridad =====
+const DIAS_RECORDATORIO_COPIA = 14;
+
+// Días desde la última copia (o desde el primer entreno, si nunca has hecho una)
+function diasSinCopia() {
+  if (!estado.sesiones.length) return 0;
+  const referencia = estado.ultimaCopia ?? Math.min(...estado.sesiones.map((s) => s.creada));
+  return Math.floor((Date.now() - referencia) / 864e5);
+}
+
+// Aviso que aparece si toca hacer copia (o nada si no toca)
+function avisoCopia() {
+  const dias = diasSinCopia();
+  if (dias < DIAS_RECORDATORIO_COPIA) return null;
+  return h('div', { class: 'recordatorio' },
+    h('div', {},
+      h('div', { class: 'titulo' }, 'Haz una copia de seguridad'),
+      h('div', { class: 'detalle' }, estado.ultimaCopia
+        ? `Tu última copia es de hace ${dias} días.`
+        : 'Aún no has guardado ninguna copia de tus datos.')),
+    h('button', { class: 'boton pequeno', onclick: exportarCopia }, 'Hacer copia'));
 }
 
 // ===== Crear elementos de la página =====
