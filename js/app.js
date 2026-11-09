@@ -268,8 +268,21 @@ function repintar() {
   pintores()[vistaActual](document.getElementById('vista-' + vistaActual));
 }
 
+// ===== Ajuste del hueco inferior en iPhone =====
+// En la app instalada, iOS a veces le da a la app algo menos de alto que la pantalla
+// y deja una franja vacía abajo. La medimos para que la barra de pestañas la aproveche.
+function ajustarHuecoInferior() {
+  const vertical = window.innerHeight > window.innerWidth;
+  const diferencia = navigator.standalone === true && vertical ? screen.height - window.innerHeight : 0;
+  const hueco = Math.max(0, Math.min(diferencia, 40)); // nunca más de 40 px, por seguridad
+  document.documentElement.style.setProperty('--hueco-inferior', hueco + 'px');
+}
+
 // ===== Arranque =====
 async function iniciar() {
+  ajustarHuecoInferior();
+  window.addEventListener('resize', ajustarHuecoInferior);
+
   try {
     await cargarEstado();
   } catch (error) {
