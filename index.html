@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <!-- Adapta la página al ancho del móvil y usa toda la pantalla (incluida la zona de la "isla") -->
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- maximum-scale y user-scalable: sin zoom -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
   <meta name="theme-color" content="#0e0f11">
 
@@ -50,12 +51,16 @@
   <!-- Ventana emergente reutilizable (para editar ejercicios, ver fotos...) -->
   <dialog id="hoja"></dialog>
 
+  <!-- Cuenta atrás del descanso entre series (ver js/temporizador.js) -->
+  <div id="temporizador" class="temporizador" hidden></div>
+
   <!-- Mensajes cortos que aparecen abajo ("Entreno guardado", etc.) -->
   <div id="aviso" role="status"></div>
 
   <!-- El orden importa: primero la base de datos y las utilidades, después cada pantalla -->
   <script src="js/db.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/temporizador.js"></script>
   <script src="js/rutina.js"></script>
   <script src="js/entrenar.js"></script>
   <script src="js/progreso.js"></script>

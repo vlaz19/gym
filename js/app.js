@@ -2,16 +2,21 @@
 // app.js — Estado de la app, utilidades comunes y navegación
 // =====================================================================
 
-const NUM_DIAS = 5;
+const POLEAS = ['Matrix', 'Technogym'];
+const POR_DEFECTO = { series: 2, reps: '6-8', descanso: 90 }; // descanso en segundos
+const DESCANSOS = [0, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]; // opciones (segundos)
 
 // ===== Estado: la copia en memoria de todos tus datos =====
 function estadoInicial() {
   return {
-    ejercicios: [],   // catálogo: { id, nombre, peso, series, reps }
-    dias: Array.from({ length: NUM_DIAS }, () => []), // ids de los ejercicios de cada día
-    sesiones: [],     // entrenos terminados: { id, dia, fecha, creada, ejercicios: [...] }
-    pesoCorporal: [], // { id, fecha, kg }
-    borrador: null,   // entreno en curso (se guarda mientras entrenas)
+    // Banco de ejercicios: { id, nombre, peso, pesos: { Matrix, Technogym }, polea, series, reps, descanso }
+    ejercicios: [],
+    // Días de entreno: { id, nombre, ejercicios: [ids del banco] }
+    dias: [],
+    // Entrenos terminados: { id, diaId, nombreDia, fecha, creada, ejercicios: [{ ejercicioId, nombre, polea, series }] }
+    sesiones: [],
+    pesoCorporal: [],  // { id, fecha, kg }
+    borrador: null,    // entreno en curso (se guarda mientras entrenas)
     ultimaCopia: null, // momento (en ms) de la última copia de seguridad
   };
 }
@@ -24,6 +29,34 @@ async function cargarEstado() {
     const valor = await DB.leer(clave);
     if (valor !== undefined) estado[clave] = valor;
   }
+  if (migrarDatos()) await guardar(...Object.keys(estado));
+}
+
+// Convierte datos de versiones anteriores de la app al formato actual.
+// Devuelve true si ha cambiado algo (para guardarlo).
+function migrarDatos() {
+  let cambios = false;
+
+  // Versión 1: los días eran 5 listas fijas [[ids], [ids], ...] sin nombre
+  if (estado.dias.some(Array.isArray)) {
+    estado.dias = estado.dias.map((d, i) =>
+      Array.isArray(d) ? { id: crearId(), nombre: `Día ${i + 1}`, ejercicios: d } : d);
+    cambios = true;
+  }
+
+  // Versión 1: los entrenos guardaban el número de día (0, 1, 2...) en vez de su id y nombre
+  const pasarANombre = (obj) => {
+    if (typeof obj?.dia !== 'number') return;
+    const dia = estado.dias[obj.dia];
+    obj.diaId = dia?.id ?? null;
+    obj.nombreDia = dia?.nombre ?? `Día ${obj.dia + 1}`;
+    delete obj.dia;
+    cambios = true;
+  };
+  estado.sesiones.forEach(pasarANombre);
+  pasarANombre(estado.borrador);
+
+  return cambios;
 }
 
 // Guarda en el móvil las partes del estado indicadas, p. ej. guardar('ejercicios', 'dias')
@@ -77,9 +110,41 @@ function buscarEjercicio(id) {
   return estado.ejercicios.find((e) => e.id === id);
 }
 
+function buscarDia(id) {
+  return estado.dias.find((d) => d.id === id);
+}
+
+function porNombre(a, b) {
+  return a.nombre.localeCompare(b.nombre, 'es');
+}
+
+// Peso actual de un ejercicio (en los de polea, el de la polea indicada)
+function pesoActual(ej, polea) {
+  if (!ej) return 0;
+  if (ej.polea && polea) return ej.pesos?.[polea] ?? ej.peso ?? 0;
+  return ej.peso ?? 0;
+}
+
+// "60 kg" o, en poleas, "M 20 · T 25 kg"
+function describirPeso(ej) {
+  if (!ej.polea) return `${formatearNumero(pesoActual(ej))} kg`;
+  return POLEAS.map((p) => `${p[0]} ${formatearNumero(pesoActual(ej, p))}`).join(' · ') + ' kg';
+}
+
+// 90 -> "1:30"
+function mmss(segundos) {
+  const m = Math.floor(segundos / 60);
+  return `${m}:${String(segundos % 60).padStart(2, '0')}`;
+}
+
+function formatearDescanso(segundos) {
+  return segundos ? mmss(segundos) : 'Sin descanso';
+}
+
 function describirObjetivo(ej) {
-  if (!ej.series && !ej.reps) return 'Sin series definidas';
-  return `${ej.series || '–'} series × ${ej.reps || '–'} reps`;
+  const partes = [`${ej.series || '–'} series × ${ej.reps || '–'} repes`];
+  if (ej.descanso) partes.push(`descanso ${mmss(ej.descanso)}`);
+  return partes.join(' · ');
 }
 
 // [{peso: 60, reps: 10}, ...] -> "60×10 · 60×8"
@@ -92,11 +157,12 @@ function sesionesOrdenadas() {
   return [...estado.sesiones].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.creada - b.creada);
 }
 
-// Lo que hiciste la última vez en un ejercicio (o undefined si nunca)
-function ultimaVezDe(ejercicioId) {
+// Lo que hiciste la última vez en un ejercicio (o undefined si nunca).
+// Si se indica polea, solo cuenta lo hecho en esa polea.
+function ultimaVezDe(ejercicioId, polea) {
   return sesionesOrdenadas()
     .reverse()
-    .map((s) => s.ejercicios.find((e) => e.ejercicioId === ejercicioId))
+    .map((s) => s.ejercicios.find((e) => e.ejercicioId === ejercicioId && (!polea || e.polea === polea)))
     .find(Boolean);
 }
 
@@ -140,6 +206,12 @@ function h(etiqueta, props = {}, ...hijos) {
   return nodo;
 }
 
+// Sustituye el contenido de un elemento, saltándose lo vacío
+// (sin esto, un elemento opcional que no existe se mostraría como el texto "null" o "false")
+function rellenar(nodo, ...hijos) {
+  nodo.replaceChildren(...hijos.flat(Infinity).filter((hijo) => hijo != null && hijo !== false));
+}
+
 function campo(etiqueta, control) {
   return h('label', { class: 'campo' }, h('span', {}, etiqueta), control);
 }
@@ -157,6 +229,9 @@ function segmentos(opciones, activo, alCambiar) {
 
 const ICONOS = {
   cerrar: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  flecha: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  mas: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  reloj: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9.5 2.5h5"/></svg>',
   papelera: '<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
 };
 
@@ -214,12 +289,12 @@ function graficaLinea(puntos) {
 const hoja = document.getElementById('hoja');
 
 function abrirHoja(titulo, ...contenido) {
-  hoja.replaceChildren(
+  rellenar(hoja, 
     h('div', { class: 'hoja-cabecera' },
       h('h3', {}, titulo),
       h('button', { class: 'boton-icono', 'aria-label': 'Cerrar', html: ICONOS.cerrar, onclick: cerrarHoja })),
     ...contenido);
-  hoja.showModal();
+  if (!hoja.open) hoja.showModal(); // si ya está abierta, solo cambia su contenido
 }
 
 function cerrarHoja() {
@@ -297,13 +372,17 @@ async function iniciar() {
     b.addEventListener('click', () => mostrarVista(b.dataset.vista));
   });
 
-  // Si dejaste un entreno a medias, vuelve directamente a él
+  // Si dejaste un entreno a medias, vuelve directamente a él (y a su temporizador)
   mostrarVista(estado.borrador ? 'entrenar' : 'rutina');
+  pintarTemporizador();
 
   // Permite que la app funcione sin internet (ver sw.js)
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch(console.error);
   }
 }
+
+// Evita el zoom con dos dedos en iPhone (el doble toque se bloquea desde styles.css)
+document.addEventListener('gesturestart', (evento) => evento.preventDefault());
 
 document.addEventListener('DOMContentLoaded', iniciar);

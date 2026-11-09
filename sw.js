@@ -5,7 +5,7 @@
 // =====================================================================
 
 // Si cambias algún archivo de la app, sube este número (v2, v3...)
-const VERSION = 'gym-v3';
+const VERSION = 'gym-v4';
 
 const ARCHIVOS = [
   './',
@@ -14,6 +14,7 @@ const ARCHIVOS = [
   'manifest.webmanifest',
   'js/db.js',
   'js/app.js',
+  'js/temporizador.js',
   'js/rutina.js',
   'js/entrenar.js',
   'js/progreso.js',

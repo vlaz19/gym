@@ -10,7 +10,7 @@ async function pintarPersonal(vista) {
   }
   if (vistaActual !== 'personal') return; // cambiaste de pestaña mientras cargaba
 
-  vista.replaceChildren(
+  rellenar(vista, 
     h('h1', {}, 'Personal'),
     seccionPesoCorporal(),
     seccionFotos(),
@@ -240,6 +240,7 @@ async function importarCopia(archivo) {
   for (const clave of Object.keys(estado)) {
     estado[clave] = copia.datos[clave] ?? inicial[clave];
   }
+  migrarDatos(); // por si la copia es de una versión anterior de la app
   // La copia que acabas de restaurar cuenta como tu última copia
   estado.ultimaCopia = Date.parse(copia.exportada) || Date.now();
   await guardar(...Object.keys(estado));

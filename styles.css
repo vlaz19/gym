@@ -28,6 +28,16 @@ html {
   color-scheme: dark;
 }
 
+/* La pantalla nunca se desplaza hacia los lados.
+   "pan-y" = solo se puede deslizar en vertical (sin zoom de doble toque ni pellizco) */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-x: clip;
+  touch-action: pan-y;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
@@ -36,8 +46,21 @@ body {
   color: var(--texto);
   background: var(--fondo);
   -webkit-text-size-adjust: 100%;
-  touch-action: manipulation; /* evita el zoom al tocar dos veces */
+  overflow-wrap: anywhere; /* las palabras muy largas también bajan de línea */
 }
+
+/* En las cuadrículas, "minmax(0, 1fr)" impide que un texto largo ensanche la columna */
+.lista,
+.campos,
+.acciones,
+.series,
+.ejercicio-sesion,
+.contenido-desplegable {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Cuando hay temporizador, deja sitio abajo para que no tape el contenido */
+body.con-temporizador main { padding-bottom: calc(var(--barra-alto) + env(safe-area-inset-bottom) + 110px); }
 
 /* env(safe-area-inset-...) = espacio de la "isla" arriba y de la barra de inicio abajo */
 main {
@@ -95,13 +118,15 @@ h2 {
   border: 1px solid transparent;
   border-radius: var(--radio);
 }
-.fila > div:first-child { min-width: 0; }
+.fila > div:first-child { flex: 1; min-width: 0; }
 .fila:disabled { opacity: 0.4; }
 .fila.sugerida { border-color: var(--acento); }
+.fila.compacta { min-height: 52px; background: var(--superficie-2); }
+.fila .flecha { display: grid; flex-shrink: 0; color: var(--suave); }
+.fila .fecha { flex-shrink: 0; white-space: nowrap; }
 
 .titulo { font-weight: 600; }
 .detalle { font-size: 0.86rem; color: var(--suave); }
-.recortar { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .valor {
   font-weight: 600;
   white-space: nowrap;
@@ -119,6 +144,27 @@ h2 {
   background: var(--acento);
   border-radius: 999px;
 }
+.etiqueta.suave { color: var(--suave); background: var(--superficie-2); }
+
+/* Botón "‹ Rutina" y cabecera con título + botón */
+.volver {
+  margin: 0 0 8px -4px;
+  padding: 6px 4px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--acento);
+  background: transparent;
+  border: 0;
+}
+.cabecera-vista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.cabecera-vista h1 { margin: 0; min-width: 0; }
+.cabecera-vista .boton { width: auto; flex-shrink: 0; }
 
 /* Aviso de copia de seguridad pendiente */
 .recordatorio {
@@ -225,6 +271,7 @@ h2 {
 input,
 select {
   width: 100%;
+  min-width: 0;
   min-height: 48px;
   padding: 0 14px;
   font: inherit;
@@ -252,6 +299,41 @@ select {
   background-size: 18px;
 }
 
+/* Interruptor tipo iPhone ("Es en polea") */
+.campo-interruptor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 4px;
+}
+input.interruptor {
+  position: relative;
+  flex-shrink: 0;
+  width: 51px;
+  min-height: 0;
+  height: 31px;
+  padding: 0;
+  background: var(--borde);
+  border: 0;
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+input.interruptor::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+input.interruptor:checked { background: var(--acento); }
+input.interruptor:checked::after { transform: translateX(20px); }
+
 /* Fecha + kg + botón en una misma línea */
 .fila-formulario {
   display: grid;
@@ -269,13 +351,20 @@ select {
   gap: 8px;
 }
 
+.ejercicio-sesion .segmentos { margin: 0; }
+
 .series { display: grid; gap: 8px; }
 .serie {
   display: grid;
-  grid-template-columns: 24px 1fr 1fr 40px;
-  gap: 8px;
+  grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) 36px 36px;
+  gap: 6px;
   align-items: center;
 }
+.serie .boton-icono { width: 36px; }
+
+/* Botón ⏱ de descanso: invisible hasta que apuntas las repes de la serie */
+.serie .descanso { visibility: hidden; color: var(--acento); }
+.serie .descanso.listo { visibility: visible; }
 .serie .num { font-weight: 600; text-align: center; color: var(--suave); }
 .serie input { text-align: center; font-variant-numeric: tabular-nums; }
 .serie.titulos {
@@ -432,6 +521,38 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
   margin-bottom: 12px;
 }
 .hoja-cabecera h3 { margin: 0; font-size: 1.15rem; }
+
+/* ===== Temporizador de descanso (flota sobre la barra de pestañas) ===== */
+.temporizador {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(var(--barra-alto) + max(calc(env(safe-area-inset-bottom) - var(--hueco-inferior)), 4px) + 10px);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 536px;
+  margin: 0 auto;
+  padding: 10px 10px 10px 16px;
+  background: var(--superficie-2);
+  border: 1px solid var(--borde);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+.temporizador[hidden] { display: none; }
+.temporizador .textos { flex: 1; min-width: 0; display: grid; }
+.temporizador .tiempo {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.temporizador .boton { width: auto; }
+.temporizador.terminado { background: var(--acento); border-color: var(--acento); }
+.temporizador.terminado .detalle,
+.temporizador.terminado .tiempo,
+.temporizador.terminado .boton-icono { color: var(--acento-texto); }
 
 /* ===== Aviso flotante ===== */
 #aviso {
