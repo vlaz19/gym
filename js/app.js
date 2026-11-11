@@ -3,7 +3,7 @@
 // =====================================================================
 
 const POLEAS = ['Matrix', 'Technogym'];
-const POR_DEFECTO = { series: 2, reps: '6-8', descanso: 90 }; // descanso en segundos
+const POR_DEFECTO = { series: 2, reps: '6-8', descanso: 180 }; // descanso en segundos
 const DESCANSOS = [0, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]; // opciones (segundos)
 
 // ===== Estado: la copia en memoria de todos tus datos =====
@@ -125,10 +125,19 @@ function pesoActual(ej, polea) {
   return ej.peso ?? 0;
 }
 
-// "60 kg" o, en poleas, "M 20 · T 25 kg"
+// "60 kg", en MP "40 kg/lado" y en poleas "M 20 · T 25 kg"
 function describirPeso(ej) {
-  if (!ej.polea) return `${formatearNumero(pesoActual(ej))} kg`;
-  return POLEAS.map((p) => `${p[0]} ${formatearNumero(pesoActual(ej, p))}`).join(' · ') + ' kg';
+  const unidad = ej.mp ? ' kg/lado' : ' kg';
+  if (!ej.polea) return formatearNumero(pesoActual(ej)) + unidad;
+  return POLEAS.map((p) => `${p[0]} ${formatearNumero(pesoActual(ej, p))}`).join(' · ') + unidad;
+}
+
+// Etiquetas pequeñas junto al nombre: "Polea", "MP"
+function etiquetasEjercicio(ej) {
+  return [
+    ej.polea && h('span', { class: 'etiqueta suave' }, 'Polea'),
+    ej.mp && h('span', { class: 'etiqueta suave' }, 'MP'),
+  ];
 }
 
 // 90 -> "1:30"
@@ -335,7 +344,12 @@ function mostrarVista(nombre) {
     b.classList.toggle('activo', b.dataset.vista === nombre);
   });
   repintar();
-  window.scrollTo(0, 0);
+  irArriba();
+}
+
+// Vuelve al principio de la pantalla (el contenido se desplaza dentro de <main>)
+function irArriba() {
+  document.querySelector('main').scrollTo(0, 0);
 }
 
 // Vuelve a dibujar la pantalla actual (tras guardar algo)
@@ -343,20 +357,20 @@ function repintar() {
   pintores()[vistaActual](document.getElementById('vista-' + vistaActual));
 }
 
-// ===== Ajuste del hueco inferior en iPhone =====
-// En la app instalada, iOS a veces le da a la app algo menos de alto que la pantalla
-// y deja una franja vacía abajo. La medimos para que la barra de pestañas la aproveche.
-function ajustarHuecoInferior() {
+// ===== Alto de la app en iPhone =====
+// En la app instalada, iOS calcula el alto de la página de forma distinta según cuánto
+// contenido tenga (por eso la barra de pestañas salía a distinta altura en cada pestaña).
+// Solución: la app ocupa siempre el alto real de la pantalla, en vertical.
+function ajustarAltoApp() {
   const vertical = window.innerHeight > window.innerWidth;
-  const diferencia = navigator.standalone === true && vertical ? screen.height - window.innerHeight : 0;
-  const hueco = Math.max(0, Math.min(diferencia, 40)); // nunca más de 40 px, por seguridad
-  document.documentElement.style.setProperty('--hueco-inferior', hueco + 'px');
+  const alto = navigator.standalone === true && vertical ? `${screen.height}px` : '100%';
+  document.documentElement.style.setProperty('--alto-app', alto);
 }
 
 // ===== Arranque =====
 async function iniciar() {
-  ajustarHuecoInferior();
-  window.addEventListener('resize', ajustarHuecoInferior);
+  ajustarAltoApp();
+  window.addEventListener('resize', ajustarAltoApp);
 
   try {
     await cargarEstado();

@@ -66,7 +66,7 @@ async function empezarSesion(dia) {
   };
   await guardar('borrador');
   repintar();
-  window.scrollTo(0, 0);
+  irArriba();
 }
 
 // ---------- 2) Entreno en curso ----------
@@ -99,12 +99,12 @@ function tarjetaEjercicioSesion(item) {
     const anterior = ultimaVezDe(item.ejercicioId, item.polea || undefined);
     rellenar(tarjeta, 
       h('div', { class: 'cabecera' },
-        h('div', { class: 'titulo' }, item.nombre),
+        h('div', { class: 'titulo' }, item.nombre, ej && etiquetasEjercicio(ej)),
         ej && h('div', { class: 'detalle' }, describirObjetivo(ej))),
       item.polea && segmentos(POLEAS.map((p) => [p, p]), item.polea, cambiarPolea),
       anterior && h('div', { class: 'detalle' }, 'Última vez: ' + resumenSeries(anterior.series)),
       h('div', { class: 'series' },
-        h('div', { class: 'serie titulos' }, h('span'), h('span', {}, 'Kg'), h('span', {}, 'Repes'), h('span'), h('span')),
+        h('div', { class: 'serie titulos' }, h('span'), h('span', {}, ej?.mp ? 'Kg/lado' : 'Kg'), h('span', {}, 'Repes'), h('span'), h('span')),
         ...item.series.map((serie, i) => filaSerie(item, serie, i, anterior?.series[i], ej, pintar))),
       h('button', {
         class: 'boton fantasma pequeno',
@@ -218,7 +218,7 @@ async function terminarSesion() {
   pintarTemporizador();
   avisar(subidas.length ? `¡Guardado! Nuevo peso: ${subidas.join(', ')} 💪` : '¡Entreno guardado! 💪');
   repintar();
-  window.scrollTo(0, 0);
+  irArriba();
 }
 
 async function descartarSesion() {

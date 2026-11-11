@@ -37,7 +37,7 @@ function diagnosticoPantalla() {
     `clientHeight: ${document.documentElement.clientHeight}`,
     `visualViewport: ${Math.round(window.visualViewport?.height ?? 0)}`,
     `zona segura arriba/abajo: ${zonaSegura}`,
-    `hueco inferior medido: ${getComputedStyle(document.documentElement).getPropertyValue('--hueco-inferior').trim()}`,
+    `alto de la app: ${getComputedStyle(document.documentElement).getPropertyValue('--alto-app').trim() || '100%'}`,
     `barra: top ${Math.round(barra.top)}, bottom ${Math.round(barra.bottom)}`,
     `instalada: ${navigator.standalone === true ? 'sí' : 'no'}`,
   ];

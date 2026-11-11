@@ -42,7 +42,7 @@ function listaDias() {
 function abrirDia(dia) {
   diaAbierto = dia.id;
   repintar();
-  window.scrollTo(0, 0);
+  irArriba();
 }
 
 // ---------- Un día concreto ----------
@@ -65,7 +65,7 @@ function pintarDia(vista, dia) {
 function filaEjercicio(ej, alTocar) {
   return h('button', { class: 'fila', onclick: alTocar },
     h('div', {},
-      h('div', { class: 'titulo' }, ej.nombre, ej.polea && h('span', { class: 'etiqueta suave' }, 'Polea')),
+      h('div', { class: 'titulo' }, ej.nombre, etiquetasEjercicio(ej)),
       h('div', { class: 'detalle' }, describirObjetivo(ej))),
     h('div', { class: 'valor' }, describirPeso(ej)));
 }
@@ -166,7 +166,7 @@ function bancoEjercicios() {
           const dias = estado.dias.filter((d) => d.ejercicios.includes(ej.id)).map((d) => d.nombre);
           return h('button', { class: 'fila', onclick: () => editarEjercicio(ej) },
             h('div', {},
-              h('div', { class: 'titulo' }, ej.nombre, ej.polea && h('span', { class: 'etiqueta suave' }, 'Polea')),
+              h('div', { class: 'titulo' }, ej.nombre, etiquetasEjercicio(ej)),
               h('div', { class: 'detalle' }, dias.length ? dias.join(' · ') : 'No está en ningún día')),
             h('div', { class: 'valor' }, describirPeso(ej)));
         }))
@@ -191,13 +191,14 @@ function editarEjercicio(ej, dia = null) {
   const descanso = h('select', {},
     DESCANSOS.map((s) => h('option', { value: s, selected: s === (base.descanso ?? 0) }, formatearDescanso(s))));
   const esPolea = h('input', { type: 'checkbox', class: 'interruptor', checked: !!base.polea });
+  const esMp = h('input', { type: 'checkbox', class: 'interruptor', checked: !!base.mp });
 
   // Los campos de peso cambian según sea o no de polea
   const camposPeso = h('div');
   function pintarCamposPeso() {
     rellenar(camposPeso, esPolea.checked
       ? h('div', { class: 'campos-fila' }, POLEAS.map((p) => campo(`Peso ${p} (kg)`, pesosPolea[p])))
-      : campo('Peso actual (kg)', peso));
+      : campo(esMp.checked ? 'Peso actual por lado (kg)' : 'Peso actual (kg)', peso));
   }
   esPolea.addEventListener('change', () => {
     if (esPolea.checked) {
@@ -207,6 +208,7 @@ function editarEjercicio(ej, dia = null) {
     }
     pintarCamposPeso();
   });
+  esMp.addEventListener('change', pintarCamposPeso);
   pintarCamposPeso();
 
   const enDias = ej ? estado.dias.filter((d) => d.ejercicios.includes(ej.id)) : [];
@@ -217,6 +219,9 @@ function editarEjercicio(ej, dia = null) {
     h('div', { class: 'campos' },
       campo('Nombre', nombre),
       h('label', { class: 'campo-interruptor' }, h('span', {}, 'Es en polea'), esPolea),
+      h('label', { class: 'campo-interruptor' },
+        h('span', {}, 'Es en MP', h('small', { class: 'detalle bloque' }, 'Apuntas el peso de un lado; en Progreso se ve el total (×2)')),
+        esMp),
       camposPeso,
       h('div', { class: 'campos-fila' }, campo('Series', series), campo('Repes', reps)),
       campo('Descanso entre series', descanso)),
@@ -244,6 +249,7 @@ function editarEjercicio(ej, dia = null) {
     Object.assign(destino, {
       nombre: texto,
       polea: esPolea.checked,
+      mp: esMp.checked,
       series: parseInt(series.value, 10) || null,
       reps: reps.value.trim(),
       descanso: Number(descanso.value) || 0,

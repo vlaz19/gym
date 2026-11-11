@@ -29,15 +29,20 @@ function progresoEjercicios() {
   if (!conDatos.some((e) => e.id === ejercicioProgreso)) ejercicioProgreso = conDatos[0].id;
   const ej = buscarEjercicio(ejercicioProgreso);
 
+  // En MP apuntas el peso de un lado: aquí se muestra el total cargado (×2)
+  const factor = ej.mp ? 2 : 1;
+
   // Cada vez que hiciste este ejercicio, con su peso máximo y la polea usada
   const todas = sesionesOrdenadas().flatMap((s) => {
     const e = s.ejercicios.find((x) => x.ejercicioId === ej.id);
-    return e ? [{
+    if (!e) return [];
+    const series = e.series.map((x) => ({ ...x, peso: x.peso * factor }));
+    return [{
       fecha: s.fecha,
       polea: e.polea || SIN_POLEA,
-      series: e.series,
-      maximo: Math.max(...e.series.map((x) => x.peso)),
-    }] : [];
+      series,
+      maximo: Math.max(...series.map((x) => x.peso)),
+    }];
   });
 
   // En ejercicios de polea, cada polea tiene su propio progreso
@@ -59,8 +64,9 @@ function progresoEjercicios() {
     selector,
     usaPoleas && h('div', { style: 'margin-top: 12px' },
       segmentos(opcionesPolea.map((p) => [p, p]), poleaProgreso, (p) => { poleaProgreso = p; repintar(); })),
+    ej.mp && h('p', { class: 'nota' }, 'Ejercicio en MP: se muestra el peso total cargado (el doble del peso por lado que apuntas).'),
     h('div', { class: 'cifras' },
-      cifra('Peso actual', `${formatearNumero(pesoActual(ej, poleaActual))} kg`),
+      cifra(ej.mp ? 'Peso actual (total)' : 'Peso actual', `${formatearNumero(pesoActual(ej, poleaActual) * factor)} kg`),
       cifra('Récord', `${formatearNumero(record)} kg`),
       cifra('Mejora', `${conSigno(mejora)} kg`),
       cifra('Sesiones', historial.length)),

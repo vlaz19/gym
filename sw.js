@@ -5,7 +5,7 @@
 // =====================================================================
 
 // Si cambias algún archivo de la app, sube este número (v2, v3...)
-const VERSION = 'gym-v4';
+const VERSION = 'gym-v5';
 
 const ARCHIVOS = [
   './',
