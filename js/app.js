@@ -2,6 +2,9 @@
 // app.js — Estado de la app, utilidades comunes y navegación
 // =====================================================================
 
+// Versión de la app que se muestra en la pestaña Personal (súbela a la vez que VERSION en sw.js)
+const VERSION_APP = 9;
+
 const POLEAS = ['Matrix', 'Technogym'];
 const POR_DEFECTO = { series: 2, reps: '6-8', descanso: 180 }; // descanso en segundos
 const DESCANSOS = [0, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]; // opciones (segundos)
@@ -404,10 +407,36 @@ async function iniciar() {
   mostrarVista(estado.borrador ? 'entrenar' : 'rutina');
   pintarTemporizador();
 
-  // Permite que la app funcione sin internet (ver sw.js)
+  // Permite que la app funcione sin internet y se actualice sola (ver sw.js)
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('sw.js').catch(console.error);
+    prepararActualizaciones();
   }
+}
+
+// ===== Actualizaciones de la app =====
+function prepararActualizaciones() {
+  // Si ya había una versión controlando la app, un cambio de control = hay versión nueva
+  const habiaVersion = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (habiaVersion) mostrarAvisoActualizacion();
+  });
+
+  // updateViaCache: 'none' = al buscar versiones nuevas, no usar copias antiguas del navegador
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+    .then((registro) => {
+      // Cada vez que vuelves a la app, comprueba si hay una versión nueva
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) registro.update().catch(() => {});
+      });
+    })
+    .catch(console.error);
+}
+
+function mostrarAvisoActualizacion() {
+  if (document.querySelector('.aviso-version')) return;
+  document.body.append(h('div', { class: 'aviso-version', role: 'status' },
+    h('span', {}, 'Hay una versión nueva'),
+    h('button', { class: 'boton pequeno', onclick: () => location.reload() }, 'Actualizar')));
 }
 
 // Evita el zoom con dos dedos en iPhone (el doble toque se bloquea desde styles.css)

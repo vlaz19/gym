@@ -16,6 +16,7 @@ async function pintarPersonal(vista) {
     seccionFotos(),
     seccionCopia(),
     diagnosticoPantalla(), // TEMPORAL: quitar cuando se arregle el hueco inferior
+    h('p', { class: 'version-app' }, `Versión de la app: ${VERSION_APP}`),
   );
 }
 
