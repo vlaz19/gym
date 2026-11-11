@@ -18,6 +18,7 @@ function estadoInicial() {
     pesoCorporal: [],  // { id, fecha, kg }
     borrador: null,    // entreno en curso (se guarda mientras entrenas)
     ultimaCopia: null, // momento (en ms) de la última copia de seguridad
+    conversiones: [],  // cambios de una sola vez ya aplicados (para no repetirlos)
   };
 }
 
@@ -55,6 +56,16 @@ function migrarDatos() {
   };
   estado.sesiones.forEach(pasarANombre);
   pasarANombre(estado.borrador);
+
+  // Cambios de una sola vez: cada uno se apunta en "conversiones" y no se vuelve a aplicar
+  const unaVez = (nombre, cambio) => {
+    if (estado.conversiones.includes(nombre)) return;
+    cambio();
+    estado.conversiones.push(nombre);
+    cambios = true;
+  };
+  // 11/11/2026: el descanso por defecto pasa a 3:00 y se aplica a todos los ejercicios que ya había
+  unaVez('descanso-3min', () => estado.ejercicios.forEach((e) => { e.descanso = 180; }));
 
   return cambios;
 }
