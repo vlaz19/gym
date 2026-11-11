@@ -369,13 +369,16 @@ function repintar() {
 }
 
 // ===== Alto de la app en iPhone =====
-// En la app instalada, iOS calcula el alto de la página de forma distinta según cuánto
-// contenido tenga (por eso la barra de pestañas salía a distinta altura en cada pestaña).
-// Solución: la app ocupa siempre el alto real de la pantalla, en vertical.
+// En la app instalada, iOS solo dibuja la app hasta "innerHeight" (p. ej. 793 de 852 en un
+// iPhone 15): lo que quede por debajo no se ve. Por eso:
+//  - la app ocupa exactamente ese alto visible (--alto-app)
+//  - si iOS ya deja una franja vacía abajo (--hueco), se descuenta del margen de la línea de inicio
 function ajustarAltoApp() {
   const vertical = window.innerHeight > window.innerWidth;
-  const alto = navigator.standalone === true && vertical ? `${screen.height}px` : '100%';
-  document.documentElement.style.setProperty('--alto-app', alto);
+  const hueco = navigator.standalone === true && vertical ? Math.max(0, screen.height - window.innerHeight) : 0;
+  const raiz = document.documentElement.style;
+  raiz.setProperty('--alto-app', `${window.innerHeight}px`);
+  raiz.setProperty('--hueco', `${hueco}px`);
 }
 
 // ===== Arranque =====

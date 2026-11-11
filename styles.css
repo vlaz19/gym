@@ -15,7 +15,8 @@
   --peligro: #ff6b6b;
   --radio: 14px;
   --barra-alto: 51px;   /* barra de pestañas sin contar el margen de la línea de inicio */
-  --margen-inferior: max(env(safe-area-inset-bottom), 4px); /* espacio de la línea de inicio */
+  /* Espacio para la línea de inicio, menos la franja que iOS ya deja vacía abajo (--hueco, de app.js) */
+  --margen-inferior: max(calc(env(safe-area-inset-bottom) - var(--hueco, 0px)), 4px);
 }
 
 * {

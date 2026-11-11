@@ -40,6 +40,7 @@ function diagnosticoPantalla() {
     `visualViewport: ${Math.round(window.visualViewport?.height ?? 0)}`,
     `zona segura arriba/abajo: ${zonaSegura}`,
     `alto de la app: ${getComputedStyle(document.documentElement).getPropertyValue('--alto-app').trim() || '100%'}`,
+    `hueco inferior: ${getComputedStyle(document.documentElement).getPropertyValue('--hueco').trim() || '0px'}`,
     `app: top ${Math.round(app.top)}, alto ${Math.round(app.height)}`,
     `barra: top ${Math.round(barra.top)}, bottom ${Math.round(barra.bottom)}`,
     `nombres barra: top ${Math.round(textos.top)}, bottom ${Math.round(textos.bottom)}`,
