@@ -31,6 +31,8 @@ function diagnosticoPantalla() {
   sonda.remove();
 
   const barra = document.querySelector('.barra').getBoundingClientRect();
+  const app = document.body.getBoundingClientRect();
+  const textos = document.querySelector('.barra button span').getBoundingClientRect();
   const datos = [
     `pantalla: ${screen.width}×${screen.height}`,
     `innerHeight: ${window.innerHeight}`,
@@ -38,7 +40,9 @@ function diagnosticoPantalla() {
     `visualViewport: ${Math.round(window.visualViewport?.height ?? 0)}`,
     `zona segura arriba/abajo: ${zonaSegura}`,
     `alto de la app: ${getComputedStyle(document.documentElement).getPropertyValue('--alto-app').trim() || '100%'}`,
+    `app: top ${Math.round(app.top)}, alto ${Math.round(app.height)}`,
     `barra: top ${Math.round(barra.top)}, bottom ${Math.round(barra.bottom)}`,
+    `nombres barra: top ${Math.round(textos.top)}, bottom ${Math.round(textos.bottom)}`,
     `instalada: ${navigator.standalone === true ? 'sí' : 'no'}`,
   ];
   return h('div', {},

@@ -20,11 +20,13 @@ function prepararSonido() {
 }
 
 // Tres pitidos cortos
+const VOLUMEN_PITIDO = 1.0; // 1 = volumen máximo sin distorsión (antes era 0.5)
+
 function pitar() {
   if (!sonido) return;
   try {
     sonido.resume();
-    [0, 0.25, 0.5].forEach((retraso) => {
+    [0, 0.32, 0.64].forEach((retraso) => {
       const oscilador = sonido.createOscillator();
       const volumen = sonido.createGain();
       oscilador.frequency.value = 880;
@@ -32,10 +34,11 @@ function pitar() {
       volumen.connect(sonido.destination);
       const inicio = sonido.currentTime + retraso;
       volumen.gain.setValueAtTime(0.0001, inicio);
-      volumen.gain.exponentialRampToValueAtTime(0.5, inicio + 0.02);
-      volumen.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.18);
+      volumen.gain.exponentialRampToValueAtTime(VOLUMEN_PITIDO, inicio + 0.02);
+      volumen.gain.setValueAtTime(VOLUMEN_PITIDO, inicio + 0.16); // se mantiene fuerte un poco más
+      volumen.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.26);
       oscilador.start(inicio);
-      oscilador.stop(inicio + 0.2);
+      oscilador.stop(inicio + 0.28);
     });
   } catch (error) {
     console.error(error);
